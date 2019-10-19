@@ -25,12 +25,12 @@ def on_message(client, userdata, msg):
     # print(value)
     
     if value is not None:
-        current_max_index = None
+        new_index_id = None
         try:
-            current_max_index = es.count(index=sub_topic, doc_type='_doc')
+            new_index_id = es.count(index=sub_topic, doc_type='_doc')["count"] + 1
         except:
-            current_max_index = 1
-        # print(current_max_index)
+            new_index_id = 1
+        print(new_index_id)
 
         doc = {}
         doc[sub_topic] = value
@@ -38,7 +38,7 @@ def on_message(client, userdata, msg):
 
         # print(doc)
 
-        res = es.index(index=sub_topic, doc_type='_doc', id=current_max_index, body=doc)
+        res = es.index(index=sub_topic, doc_type='_doc', id=new_index_id, body=doc)
         # print(res['result'])
 
 # create instance for elasticsearch
