@@ -4,7 +4,7 @@ from datetime import datetime
 import credential as cr
 import ssl, time
 
-TOPIC_PREFIX = "oth/tony/db/rasp_1/sensor/"
+TOPIC_PREFIX = "/iot_cloud_solutiions/practice/db/regensburg/rpi_1/sensor/"
 SLEEP_TIME = 3
 
 def on_publish(client, userdata, result):  # create function for callback
