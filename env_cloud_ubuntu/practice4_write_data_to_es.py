@@ -6,7 +6,7 @@ import credential as cr
 import ssl, time, json
 
 # set up topic
-TOPIC_PREFIX = "oth/tony/db/rasp_1/sensor/"
+TOPIC_PREFIX = "/iot_cloud_solutiions/practice/db/regensburg/rpi_1/sensor/"
 topic =  TOPIC_PREFIX + "#"
 
 # topic = "oth/tony/status/rasp_1/state"
@@ -19,26 +19,20 @@ def on_connect(client, userdata, flags, rc):
 def on_message(client, userdata, msg):
     # print(str(datetime.now()) + ": " + msg.topic+" "+str(msg.payload))
     sub_topic = msg.topic.split(TOPIC_PREFIX)[1]
-    # print(sub_topic)
+    print(sub_topic)
 
-    value = str(msg.payload.decode("utf-8","ignore"))
-    # print(value)
+    value = float(msg.payload)
+    print(value)
     
     if value is not None:
-        new_index_id = None
-        try:
-            new_index_id = es.count(index=sub_topic, doc_type='_doc')["count"] + 1
-        except:
-            new_index_id = 1
-        print(new_index_id)
-
         doc = {}
-        doc[sub_topic] = value
-        doc['time'] = datetime.now()
+        doc['topic'] = str(msg.topic)
+        doc['value'] = value
+        doc['time'] = datetime.utcnow()
 
-        # print(doc)
+        print(doc)
 
-        res = es.index(index=sub_topic, doc_type='_doc', id=new_index_id, body=doc)
+        res = es.index(index=sub_topic + "_test", doc_type='_doc', body=doc)
         # print(res['result'])
 
 # create instance for elasticsearch
