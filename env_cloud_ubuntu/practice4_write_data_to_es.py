@@ -27,13 +27,13 @@ def on_message(client, userdata, msg):
     if value is not None:
         doc = {}
         doc['topic'] = str(msg.topic)
-        doc['value'] = value
+        doc[sub_topic] = value
         doc['time'] = datetime.utcnow()
 
         print(doc)
 
         res = es.index(index=sub_topic + "_test", doc_type='_doc', body=doc)
-        # print(res['result'])
+        print(res['result'])
 
 # create instance for elasticsearch
 es = Elasticsearch()
