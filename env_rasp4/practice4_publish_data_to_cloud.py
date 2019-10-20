@@ -45,6 +45,11 @@ try:
         client.publish( TOPIC_PREFIX + "temperature", temp)  # publish
         client.publish( TOPIC_PREFIX + "humidity", humidity)  # publish
 
+        #senseHat flashes once it sends out a set of measure data 
+        sense.clear((50, 50, 50))
+        time.sleep(0.05)
+        sense.clear((0, 0, 0))
+        
         time.sleep(SLEEP_TIME)
 
     client.loop_forever()
