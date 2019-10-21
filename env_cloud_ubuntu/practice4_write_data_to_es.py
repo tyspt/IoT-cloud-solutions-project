@@ -6,7 +6,7 @@ import credential as cr
 import ssl, time, json
 
 # set up topic
-TOPIC_PREFIX = "/iot_cloud_solutiions/practice/db/regensburg/rpi_1/sensor/"
+TOPIC_PREFIX = "/iot_cloud_solutions/practice/db/regensburg/rpi_1/sensor/"
 topic =  TOPIC_PREFIX + "#"
 
 # topic = "oth/tony/status/rasp_1/state"
