@@ -1,0 +1,15 @@
+[Unit]
+Description=Service responsible for readding and uploading sensehat data on the rasparry pi and uploading it to MQTT cloud server using the python script.
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/pi/IoT_cloud_solutions_project/env_rasp4
+User=pi
+Restart=always
+RestartSec=5
+ExecStart=/usr/bin/python3 /home/pi/IoT_cloud_solutions_project/env_rasp4/practice4_publish_data_to_cloud.py > /dev/null
+#ExecStop=/bin/kill -TERM $MAINPID
+#ExecReload=/bin/kill -HUP $MAINPID
+[Install]
+WantedBy=multi-user.target

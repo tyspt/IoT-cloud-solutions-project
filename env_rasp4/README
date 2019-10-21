@@ -1,0 +1,19 @@
+You can put the .service file under /etc/systemd/system and make collecting & uploading sense hat data into a system service.
+
+#Then run the following command to start the service
+sudo systemctl daemon-reload
+
+#starting the service
+sudo systemctl start iot-cloud-solutions
+
+#checking status
+systemctl status iot-cloud-solutions
+
+#stop service
+sudo systemctl stop iot-cloud-solutions
+
+#auto start on system boot
+sudo systemctl enable iot-cloud-solutions
+
+#check service logs
+journalctl -u iot-cloud-solutions
