@@ -1,5 +1,5 @@
 [Unit]
-Description=Service responsible for readding and uploading sensehat data on the rasparry pi and uploading it to MQTT cloud server using the python script.
+Description=data publish service to MQTT server for IoT_cloud_solutions_project
 After=network.target
 
 [Service]
