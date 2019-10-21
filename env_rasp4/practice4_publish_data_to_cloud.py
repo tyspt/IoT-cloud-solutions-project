@@ -2,7 +2,8 @@ import paho.mqtt.client as paho
 from sense_hat import SenseHat
 from datetime import datetime
 import credential as cr
-import ssl, time
+import ssl
+import time
 
 TOPIC_PREFIX = "/iot_cloud_solutions/practice/db/regensburg/rpi_1/sensor/"
 SLEEP_TIME = 3
@@ -12,6 +13,7 @@ sense.clear()
 
 client = paho.Client()  # create client object
 client.isConnected = False
+
 
 def on_publish(cl, userdata, result):  # create function for callback
     print(str(datetime.now()) + ": (Callback) data published")
@@ -29,13 +31,19 @@ def on_connect(cl, userdata, flags, rc):
 
 def on_disconnect(cl, userdata, rc):
     if rc == 0:
-        print(str(datetime.now()) + ": (Callback) Programm disconnectes from server, waiting to exit...")
+        print(str(datetime.now()) +
+              ": (Callback) Programm disconnectes from server, waiting to exit...")
         cl.loop_stop()
     else:
-        print(str(datetime.now()) + ": (Callback) Unexpected disconnection, trying to reconnect...")
+        print(str(datetime.now()) +
+              ": (Callback) Unexpected disconnection, trying to reconnect...")
         client.isConnected = False
 
-
+# flashes the screen of sense hat for a short period of time
+def flash_sense_as_signal(color, last_time):
+    sense.clear(color)
+    time.sleep(last_time)
+    sense.clear((0, 0, 0))
 
 
 client.username_pw_set(username=cr.username, password=cr.password)
@@ -56,6 +64,7 @@ client.loop_start()
 
 # try to connect to server at first start up
 while not client.isConnected:
+    flash_sense_as_signal((50, 0, 0), 0.05)
     try:
         client.connect(host=cr.broker, port=cr.port, keepalive=60, bind_address="")  # establish connection
     except:
@@ -67,6 +76,7 @@ try:
     while True:
         # print(str(client.isConnected))
         while not client.isConnected:
+            flash_sense_as_signal((50, 0, 0), 0.05)
             print(str(datetime.now()) + ": (MainThread) Not connected... waiting for connection...")
             time.sleep(SLEEP_TIME)
 
@@ -79,9 +89,7 @@ try:
         client.publish(TOPIC_PREFIX + "humidity", humidity)  # publish
 
         # senseHat flashes once it sends out a set of measure data
-        sense.clear((50, 50, 50))
-        time.sleep(0.05)
-        sense.clear((0, 0, 0))
+        flash_sense_as_signal((0, 50, 0) , 0.05)
 
         time.sleep(SLEEP_TIME)
 except:
