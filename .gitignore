@@ -91,6 +91,8 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+bin/
+Scripts/
 
 # Spyder project settings
 .spyderproject
@@ -114,3 +116,5 @@ credential.py
 credentials.py
 
 *.pem
+
+*.service
