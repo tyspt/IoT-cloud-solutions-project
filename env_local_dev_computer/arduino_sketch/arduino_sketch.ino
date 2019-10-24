@@ -92,8 +92,8 @@ static bool measure_water_level(float *water_level){
   /* Measure once every inverval */
   if( millis( ) - measurement_timestamp > (READING_INTERVAL_SECONDS * 1000ul) || millis( ) < measurement_timestamp )
   {   
-      //convert water level to percent (sensor max output voltage 4.2V, last value is for collaboration) 
-      *water_level = ((analogRead(WATER_LEVEVL_SENSOR_ANALOG_PIN) * 5.0 / 4.2) / 1023.0 * 100.0) / 0.85;
+      //convert water level to percent (sensor max output voltage 4.2V so mapping does't go up to 1023) 
+      *water_level = map(analogRead(WATER_LEVEVL_SENSOR_ANALOG_PIN), 0, 720, 0, 100);
       measurement_timestamp = millis( );
       return( true );
   }
