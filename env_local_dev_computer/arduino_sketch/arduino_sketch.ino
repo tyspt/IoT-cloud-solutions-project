@@ -1,26 +1,19 @@
-
+#include <SR04.h>
 #include <dht_nonblocking.h>
 #include <ArduinoJson.h>
 
-/* pin arrangement */
-static const int DHT_SENSOR_DIGITAL_PIN = 2;  
-static const int WATER_LEVEVL_SENSOR_ANALOG_PIN= A0;
-
-
 /* general delay between two readings of sensor data */
-#define READING_INTERVAL_SECONDS 5
-
-
-/* use int value to stand for sensor types in order to prevent meomory leak
- * when converting to json */
-#define TEMPERATURE_SENSOR 1
-#define HUMIDITY_SENSOR 2
-
+#define READING_INTERVAL_SECONDS 3
 #define DHT_SENSOR_TYPE DHT_TYPE_11
 
-DHT_nonblocking dht_sensor( DHT_SENSOR_DIGITAL_PIN, DHT_SENSOR_TYPE );
 
+/* pin arrangement */
+static const int DHT_SENSOR_DIGITAL_PIN = 2;
+static const int DISTANCE_SENSOR_DIGITAL_PIN_ECHO = 11;
+static const int DISTANCE_SENSOR_DIGITAL_PIN_TRIG = 12;
 
+static const int WATER_LEVEVL_SENSOR_ANALOG_PIN = A0;
+static const int LIGHT_SENSOR_ANALOG_PIN = A2;
 
 
 //create json objects for storing data
@@ -28,6 +21,12 @@ const size_t capacity = JSON_OBJECT_SIZE(4);
 DynamicJsonDocument temp_json(capacity);
 DynamicJsonDocument humid_json(capacity);
 DynamicJsonDocument water_level_json(capacity);
+DynamicJsonDocument brightness_json(capacity);
+DynamicJsonDocument distance_json(capacity);
+
+
+DHT_nonblocking dht_sensor( DHT_SENSOR_DIGITAL_PIN, DHT_SENSOR_TYPE );
+SR04 sr04_ultrasonic = SR04(DISTANCE_SENSOR_DIGITAL_PIN_ECHO,DISTANCE_SENSOR_DIGITAL_PIN_TRIG); //object library for ultrasonic sensor
 
 /*
  * Initialize the serial port.
@@ -35,7 +34,7 @@ DynamicJsonDocument water_level_json(capacity);
 void setup( )
 {
   // Set default values to json objects which hold sensor data, it is important that the String and Object values 
-  // e.g. the text "temperature" and "°C" should not be changed in the loop() function later, otherweise there may be risk of memory leaking 
+  // e.g. the text "temperature" and "°C" should not be changed in the loop() function later, otherweise there may be risk of memory leak
   // (See arduinojson document: https://arduinojson.org/v6/doc/)
   temp_json["timestamp"] = 1ul;
   temp_json["sensor"] = "Temperature";
@@ -48,9 +47,19 @@ void setup( )
   humid_json["unit"] = "%";
 
   water_level_json["timestamp"] = 1ul;
-  water_level_json["sensor"] = "Water-level";
+  water_level_json["sensor"] = "Water-Level";
   water_level_json["data"] = -1.0f;
   water_level_json["unit"] = "%";
+
+  brightness_json["timestamp"] = 1ul;
+  brightness_json["sensor"] = "Brightness";
+  brightness_json["data"] = -1.0f;
+  brightness_json["unit"] = "%";
+
+  distance_json["timestamp"] = 1ul;
+  distance_json["sensor"] = "Ultrasonic-Distance";
+  distance_json["data"] = -1.0f;
+  distance_json["unit"] = "cm";
   
   Serial.begin(9600);
 }
@@ -102,6 +111,48 @@ static bool measure_water_level(float *water_level){
 }
 
 
+/* Light brightness measurement
+ *  
+ * Poll for a measurement, keeping the state machine alive.  Returns
+ * true if a measurement is available.
+ */
+static bool measure_brightness(int *brightness){
+  static unsigned long measurement_timestamp = millis( );
+  
+  /* Measure once every inverval */
+  if( millis( ) - measurement_timestamp > (READING_INTERVAL_SECONDS * 1000ul) || millis( ) < measurement_timestamp )
+  {   
+      //convert brightness to percent
+      *brightness = map(analogRead(LIGHT_SENSOR_ANALOG_PIN), 0, 1023, 0, 100);
+      measurement_timestamp = millis( );
+      return( true );
+  }
+  
+  return ( false );
+}
+
+
+/* Ultrasonic Distance measurement
+ *  
+ * Poll for a measurement, keeping the state machine alive.  Returns
+ * true if a measurement is available.
+ */
+static bool measure_distance(int *distance){
+  static unsigned long measurement_timestamp = millis( );
+  
+  /* Measure once every inverval */
+  if( millis( ) - measurement_timestamp > (READING_INTERVAL_SECONDS * 1000ul) || millis( ) < measurement_timestamp )
+  {   
+      //convert brightness to percent
+      *distance = sr04_ultrasonic.Distance();
+      measurement_timestamp = millis( );
+      return( true );
+  }
+  
+  return ( false );
+}
+
+
 /*
  * Main program loop.
  */
@@ -109,9 +160,11 @@ void loop( )
 {
   float temperature;
   float humidity;
-
-  float water_level;   
-
+  float water_level;
+  
+  int brightness; 
+  int distance;
+  
   /* Measure temperature and humidity.  If the functions returns
      true, then a measurement is available. */
   if( measure_environment( &temperature, &humidity ) == true )
@@ -131,12 +184,35 @@ void loop( )
 
  /* Measure water level.  If the functions returns
    true, then a measurement is available. */
-  if(measure_water_level(&water_level))
+  if(measure_water_level(&water_level) == true )
   {
     water_level_json["timestamp"] = millis();
     water_level_json["data"] = water_level;
     
     serializeJson(water_level_json, Serial);
+    Serial.println();
+  }
+
+
+   /* Measure brightness.  If the functions returns
+   true, then a measurement is available. */
+  if(measure_brightness(&brightness) == true )
+  {
+    brightness_json["timestamp"] = millis();
+    brightness_json["data"] = brightness;
+    
+    serializeJson(brightness_json, Serial);
+    Serial.println();
+  }
+
+   /* Measure distance.  If the functions returns
+   true, then a measurement is available. */
+  if(measure_distance(&distance) == true )
+  {
+    distance_json["timestamp"] = millis();
+    distance_json["data"] = distance;
+    
+    serializeJson(distance_json, Serial);
     Serial.println();
   }
   
