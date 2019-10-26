@@ -15,7 +15,7 @@ while True:
     # my camera is installed upside down so i have to flip it over
     camera.rotation = 180
     camera.resolution = (1024, 768)
-    camera.framerate = 30
+    camera.framerate = 5
     
     try:
         # give camera some time to warm up
