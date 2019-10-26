@@ -118,3 +118,6 @@ credentials.py
 *.pem
 
 *.service
+
+#images
+images/

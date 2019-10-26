@@ -1,10 +1,15 @@
-from picamera import PiCamera
-from time import sleep
+import picamera
+import time
+from datetime import datetime
+
 import global_config as config
 
 
-camera.start_preview()
-for i in range(5):
-    sleep(config.CAMERA_INTERVAL_SECONDS)
-    camera.capture('./images/image%s.jpg' % i)
-camera.stop_preview()
+with picamera.PiCamera() as camera:
+    # give camera some time to warm up
+    camera.start_preview()
+    time.sleep(2)
+    # take one picture each interval
+    for filename in camera.capture_continuous('./images/image-{timestamp:%Y-%m-%d_%H:%M:%S}.jpg'):
+        print(str(datetime.now()) + ': Captured %s' % filename)
+        time.sleep(config.CAMERA_INTERVAL_SECONDS)
