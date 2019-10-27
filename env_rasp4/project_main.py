@@ -5,7 +5,7 @@ import json
 import serial
 import rx
 
-from project_mqtt import MQTTDataPublisher
+from project_mqtt_publisher import MQTTDataPublisher
 import global_config as config
 
 

@@ -7,7 +7,8 @@ import time
 import credential as cr
 
 ''' MQTT helper class that provides functions to connect to server using preset information on credential.py
-    file and publishing data under any given topic, upon disconnection it will try to reconnect automatically.
+    file and publish data under any a topic. The programm should be able to handle disconnection automatically 
+    all by itself.
 '''
 class MQTTDataPublisher:
     def __init__(self):

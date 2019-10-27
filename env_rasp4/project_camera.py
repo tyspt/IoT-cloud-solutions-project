@@ -3,6 +3,8 @@ from datetime import datetime
 
 import global_config as config
 
+''' Taking picture under a given interval.
+'''
 def start_taking_picture():
     camera = None
     timestamp = None
