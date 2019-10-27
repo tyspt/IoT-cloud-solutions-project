@@ -42,7 +42,7 @@ void setup( )
   temp_json["unit"] = "celsius";
 
   humid_json["timestamp"] = 1ul;
-  humid_json["sensor"] = "htumidity";
+  humid_json["sensor"] = "humidity";
   humid_json["data"] = -1.0f;
   humid_json["unit"] = "percent";
 
