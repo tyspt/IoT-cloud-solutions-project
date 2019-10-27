@@ -3,7 +3,7 @@
 #include <ArduinoJson.h>
 
 /* general delay between two readings of sensor data */
-#define READING_INTERVAL_SECONDS 3
+#define READING_INTERVAL_SECONDS 20
 #define DHT_SENSOR_TYPE DHT_TYPE_11
 
 
@@ -34,32 +34,32 @@ SR04 sr04_ultrasonic = SR04(DISTANCE_SENSOR_DIGITAL_PIN_ECHO,DISTANCE_SENSOR_DIG
 void setup( )
 {
   // Set default values to json objects which hold sensor data, it is important that the String and Object values 
-  // e.g. the text "temperature" and "°C" should not be changed in the loop() function later, otherweise there may be risk of memory leak
+  // e.g. the text "temperature" and "celsius" should not be changed in the loop() function later, otherweise there may be risk of memory leak
   // (See arduinojson document: https://arduinojson.org/v6/doc/)
   temp_json["timestamp"] = 1ul;
-  temp_json["sensor"] = "Temperature";
+  temp_json["sensor"] = "temperature";
   temp_json["data"] = -1.0f;
-  temp_json["unit"] = "°C";
+  temp_json["unit"] = "celsius";
 
   humid_json["timestamp"] = 1ul;
-  humid_json["sensor"] = "Humidity";
+  humid_json["sensor"] = "htumidity";
   humid_json["data"] = -1.0f;
-  humid_json["unit"] = "%";
+  humid_json["unit"] = "percent";
 
   water_level_json["timestamp"] = 1ul;
-  water_level_json["sensor"] = "Water-Level";
+  water_level_json["sensor"] = "water_level";
   water_level_json["data"] = -1.0f;
-  water_level_json["unit"] = "%";
+  water_level_json["unit"] = "percent";
 
   brightness_json["timestamp"] = 1ul;
-  brightness_json["sensor"] = "Brightness";
+  brightness_json["sensor"] = "brightness";
   brightness_json["data"] = -1.0f;
-  brightness_json["unit"] = "%";
+  brightness_json["unit"] = "percent";
 
   distance_json["timestamp"] = 1ul;
-  distance_json["sensor"] = "Ultrasonic-Distance";
+  distance_json["sensor"] = "ultrasonic_distance";
   distance_json["data"] = -1.0f;
-  distance_json["unit"] = "cm";
+  distance_json["unit"] = "centimeter";
   
   Serial.begin(9600);
 }
@@ -123,6 +123,8 @@ static bool measure_brightness(int *brightness){
   if( millis( ) - measurement_timestamp > (READING_INTERVAL_SECONDS * 1000ul) || millis( ) < measurement_timestamp )
   {   
       //convert brightness to percent
+
+      
       *brightness = map(analogRead(LIGHT_SENSOR_ANALOG_PIN), 0, 1023, 0, 100);
       measurement_timestamp = millis( );
       return( true );
