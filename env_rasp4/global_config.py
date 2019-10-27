@@ -1,7 +1,7 @@
 
 # Time between two pictures are taken in seconds, Raspberry Pi needs ca. 3 seconds to take one 
 # picture with the current setting, so this value should be at least 3
-CAMERA_INTERVAL_SECONDS = 3600
+CAMERA_INTERVAL_SECONDS = 1800
 
 
 # Settings used for Serial communication with Arduino

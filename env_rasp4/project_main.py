@@ -28,11 +28,11 @@ def read_from_serial(observer, args):
             # push that one line to rx stream
             observer.on_next(data)
     except KeyboardInterrupt:
-        print(str(datetime.now()),
+        print(str(datetime.now()) +
               ": (Main) User cancel signal received... Aborting porgram ...")
         pass
     except Exception:
-        print(str(datetime.now()),
+        print(str(datetime.now()) + 
               ": (Serial) Error, unable to get serial communincation... Retrying...")
         # retry accessing serial after a while
         time.sleep(3)
