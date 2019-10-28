@@ -35,7 +35,7 @@ def on_message(client, userdata, msg):
         # print(doc)
         es_index = 'project_aquaponics_' + sub_topic
         res = es.index(index=es_index, doc_type='_doc', body=doc)
-        print(str(datetime.now()) + ": " + str(res['result']) +" unter index: " + es_index + ", data: " + str(doc) )
+        print(str(datetime.now()) + ": " + str(res['result']) +" under index: " + es_index + ", data: " + str(doc) )
 
 # create instance for elasticsearch
 es = Elasticsearch()
