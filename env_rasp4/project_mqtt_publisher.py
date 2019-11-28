@@ -3,6 +3,7 @@ from datetime import datetime
 import paho.mqtt.client as paho
 import ssl
 import time
+import logging
 
 import credential as cr
 
@@ -10,6 +11,8 @@ import credential as cr
     and to publish data under a given topic. The programm should be able to handle disconnection automatically 
     all by itself.
 '''
+
+
 class MQTTDataPublisher:
     def __init__(self):
         self.client = paho.Client()  # create client object
@@ -35,34 +38,36 @@ class MQTTDataPublisher:
         # try to connect to server at first start up
         while not self.client.isConnected:
             try:
+                logging.info("(MQTT) ............ connecting ............")
                 # establish connection
                 self.client.connect(
                     host=cr.broker, port=cr.port, keepalive=60, bind_address="")
             except:
-                print(str(datetime.now()) +
-                      ": (MQTT) Failed to establish connection to server, retrying...")
-                time.sleep(3)
+                logging.info(
+                    "(MQTT) Failed to establish connection to server, retrying...")
+            
+            time.sleep(3)
 
     def on_publish(self, cl, userdata, result):  # create function for callback
-        print(str(datetime.now()) + ": (MQTT) data published " + str(userdata))
+        logging.info("(MQTT) data published " + str(userdata))
         pass
 
     def on_connect(self, cl, userdata, flags, rc):
         if rc == 0:
-            print(str(datetime.now()) + ": (MQTT) Successfully connected")
+            logging.info("(MQTT) Successfully connected")
             self.client.isConnected = True
         else:
-            print(str(datetime.now()) + ": (MQTT) Bad connection, RC = ", rc)
+            logging.info("(MQTT) Bad connection, RC = ", rc)
             self.client.isConnected = False
 
     def on_disconnect(self, cl, userdata, rc):
         if rc == 0:
-            print(str(datetime.now()) +
-                  ": (MQTT) Programm disconnectes from server, waiting to exit...")
+            logging.info(
+                "(MQTT) Programm disconnectes from server, waiting to exit...")
             cl.loop_stop()
         else:
-            print(str(datetime.now()) +
-                  ": (MQTT) Unexpected disconnection, trying to reconnect...")
+            logging.error(
+                "(MQTT) Unexpected disconnection, trying to reconnect...")
             self.client.isConnected = False
 
     # This is the function that publishes data to cloud
@@ -73,3 +78,18 @@ class MQTTDataPublisher:
     # stop the loop when exiting the script
     def disconnect(self):
         self.client.disconnect()
+
+
+if __name__ == "__main__":
+    logging.basicConfig(format="%(asctime)s %(levelname)s: %(message)s",
+                        level=logging.DEBUG)
+    mqtt = MQTTDataPublisher()
+    mqtt.publish_data_to_cloud("Hello World", "test")
+    
+    time.sleep(5)
+    mqtt.publish_data_to_cloud("Hello World", "test")
+    
+    time.sleep(5)
+    mqtt.publish_data_to_cloud("Hello World", "test")
+
+    input("")

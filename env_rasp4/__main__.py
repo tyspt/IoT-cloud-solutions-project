@@ -1,14 +1,11 @@
 from project_serial_reader import SerialReader
 from project_mqtt_publisher import MQTTDataPublisher
-
-from project_camera import IntervalPictureTaker
+import project_camera
 
 import threading
 import logging
 
-logging.basicConfig(format="%(asctime)s %(levelname)s: %(message)s", \
-                    # filename="project.log", 
-                    level=logging.DEBUG)
+logging.basicConfig(format="%(asctime)s %(levelname)s: %(message)s", level=logging.ERROR, filename="error.log")
 
 """ Main Entry of the project 
 """
@@ -19,7 +16,7 @@ t_serial.start()
 
 # Thread dealing with camera
 t_camera = threading.Thread(
-    target=IntervalPictureTaker().start_taking_picture, daemon=True)
+    target=project_camera.take_picture, daemon=True)
 t_camera.start()
 
 # block main thread to make sure all other threads will continue running
