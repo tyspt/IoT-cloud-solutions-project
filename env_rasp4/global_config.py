@@ -6,7 +6,11 @@ CAMERA_INTERVAL_SECONDS = 1800
 
 # Settings used for Serial communication with Arduino
 SERIAL_BAND_RATE = 9600
-SERIAL_PORT_NAME = "/dev/ttyACM0"
+# times of retry when searing for the correct Serial port
+SERIAL_ERROR_MAX_RETRY = 10              
+# when using a serial port which continously having false data but was proven working before before, max waiting 
+# time before abandoning the current connection and go through the port selection process again
+SERIAL_ERROR_MAX_TIMEOUT = 300          
 
 
 # MQTT base topics used for communication between Raspberry Pi and Cloud, subtopics will 

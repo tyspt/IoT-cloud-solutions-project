@@ -1,9 +1,12 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from rx import operators as ops
 import time
 import json
 import serial
+import serial.tools.list_ports
 import rx
+
+import logging
 
 from project_mqtt_publisher import MQTTDataPublisher
 import global_config as config
@@ -14,43 +17,89 @@ import global_config as config
     and finally upload to cloud
 '''
 
+
 class SerialReader:
     def __init__(self, mqtt_publisher):
         self.mqtt_publisher = mqtt_publisher
-        pass
-    
+
     def start_processing(self):
-         rx.create(self.__read_from_serial).subscribe(
-             on_next=lambda data: self.__publish_data_to_cloud(
-                 data, self.mqtt_publisher),
-             on_error=lambda e: print(str(datetime.now()), ": (Main) There was an error processing data, message: ", e))
-    
-    def __read_from_serial(self, observer, args):
+        rx.create(self.read_from_serial).subscribe(
+            on_next=lambda data: self.publish_data_to_cloud(
+                data, self.mqtt_publisher),
+            on_error=lambda e: logging.info("(Main) There was an error processing data, message: {}".format(str(e))))
+
+    def read_from_serial(self, observer, args):
         try:
-            # open serial port
-            ser = serial.Serial(config.SERIAL_PORT_NAME, config.SERIAL_BAND_RATE)
-
             while True:
-                # read each line of json data from serial
-                line = ser.readline()
-                data = json.loads(line)
+                # this one blocks until find correct port -> can block forever
+                ser = self.find_ardunio_serial_port()
+                
+                last_correct_data_timestamp = datetime.utcnow()
+                
+                while True:
+                    try:
+                        # read each line of json data from serial
+                        line = ser.readline().decode('UTF-8').strip()
+                        
+                        if len(line) > 0:
+                            data = json.loads(line)
 
-                # push that one line to rx stream
-                observer.on_next(data)
+                            # mark last timestamp reading correct data
+                            last_correct_data_timestamp = datetime.utcnow()
+                        
+                            # push that one line to rx stream
+                            observer.on_next(data)
+                    except:
+                        logging.info("error parsing data {}".format(line))
+                        time_since_last_correct_data = datetime.utcnow() - last_correct_data_timestamp
+                        
+                        # if haven't been able to get correct data for a long time, abandon the current connection and 
+                        # try to initiallize the serial connection again
+                        if time_since_last_correct_data > timedelta(seconds=config.SERIAL_ERROR_MAX_TIMEOUT):
+                            break
         except KeyboardInterrupt:
-            print(str(datetime.now()) +
-                ": (Main) User cancel signal received... Aborting porgram ...")
-            pass
-        except Exception:
-            print(str(datetime.now()) + 
-                ": (Serial) Error, unable to get serial communincation... Retrying...")
-            # retry accessing serial after a while
-            time.sleep(3)
-            self.__read_from_serial(observer, args)
-
+            logging.info("User canceled, exiting...")
+        
+            
+    # Find the right working serial port, blocks until finds correct port (also when no data in serial or wrong data format -> non json sent)
+    def find_ardunio_serial_port(self):
+        ser = None
+        
+        while ser is None:
+            logging.info("Trying to find correct serial port...")
+            
+            ports = list(serial.tools.list_ports.comports())
+            
+            for p in ports:
+                # try:
+                logging.info("Testing serial port {}".format(p))
+                # try to open serial port
+                ser = serial.Serial(
+                    p.device, config.SERIAL_BAND_RATE, timeout=10)
+                
+                error_count = 0
+                while error_count < config.SERIAL_ERROR_MAX_RETRY:
+                    try:
+                        # read each line of json data from serial
+                        line = ser.readline().decode('UTF-8').strip()
+                        
+                        if len(line) > 0:
+                            logging.debug("read line: {}".format(line))
+                            data = json.loads(line)
+                            logging.info("Successfully read data from serial {}".format(str(data)))
+                            return ser
+                    except:
+                        error_count += 1
+                        logging.info("Try {} on Port {} failed... retrying...".format(error_count, p))  
+            
+            # Wait for a long time and check again if there's new machine available
+            logging.error("Can not read any sensor data from Serial port, is arduino working correctly?")
+            time.sleep(300)
+            
+    
 
     # Process sensor data, assign correct topics to it and finally use MQTT to publish to the cloud
-    def __publish_data_to_cloud(self,data, mqtt):
+    def publish_data_to_cloud(self, data, mqtt):
         topic = config.TOPIC_PREFIX_SENSOR + \
             data["sensor"] + "/" + data["unit"] + "/"
         mqtt.publish_data_to_cloud(topic, data['data'])
@@ -59,6 +108,9 @@ class SerialReader:
 
 # Main function
 if __name__ == "__main__":
+    logging.basicConfig(format="%(asctime)s ({}) %(levelname)s: %(message)s".format(str(__file__).replace(".py", "")),
+                        level=logging.DEBUG)
+
     mqtt_publisher = MQTTDataPublisher()
-    serial = SerialReader(mqtt_publisher)
-    serial.start_processing()
+    SerialReader(mqtt_publisher).start_processing()
+    

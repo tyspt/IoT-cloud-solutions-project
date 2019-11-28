@@ -119,5 +119,10 @@ credentials.py
 
 *.service
 
+
+.vscode/
+bin/
+include
+
 #images
 images/

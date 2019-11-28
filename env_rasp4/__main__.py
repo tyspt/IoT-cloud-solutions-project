@@ -4,6 +4,11 @@ from project_mqtt_publisher import MQTTDataPublisher
 from project_camera import IntervalPictureTaker
 
 import threading
+import logging
+
+logging.basicConfig(format="%(asctime)s %(levelname)s: %(message)s", \
+                    # filename="project.log", 
+                    level=logging.DEBUG)
 
 """ Main Entry of the project 
 """
