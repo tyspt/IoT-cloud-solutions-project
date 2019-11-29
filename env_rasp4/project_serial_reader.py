@@ -38,6 +38,7 @@ class SerialReader:
                 
                 while True:
                     line = None
+                    
                     try:
                         # read each line of json data from serial
                         line = ser.readline().decode('UTF-8').strip()
@@ -55,27 +56,29 @@ class SerialReader:
                     except:
                         logging.info("(Main) error parsing data {}".format(line))
                         time_since_last_correct_data = datetime.utcnow() - last_correct_data_timestamp
-                        
                         # if haven't been able to get correct data for a long time, abandon the current connection and 
                         # try to initiallize the serial connection again
                         if time_since_last_correct_data > timedelta(seconds=config.SERIAL_ERROR_MAX_TIMEOUT):
                             break
+                        # add some time buffer to prevent too frequent retry when error occurs
+                        time.sleep(3)
         except KeyboardInterrupt:
             logging.info("(Main) User canceled, exiting...")
         
             
     # Find the right working serial port, blocks until finds correct port (also when no data in serial or wrong data format -> non json sent)
     def find_ardunio_serial_port(self):
-        ser = None
-        while ser is None:
-            logging.info("(Main) Trying to find correct serial port...")
+        while True:
+            logging.info(
+                "(Main) ------- Trying to find correct serial port... -------")
             ports = list(serial.tools.list_ports.comports())
             
+            # find out which serial port is the one has data
             for p in ports:
                 logging.info("(Main) Testing serial port {}".format(p))
                 # try to open serial port
                 ser = serial.Serial(
-                    p.device, config.SERIAL_BAND_RATE, timeout=10)
+                    p.device, config.SERIAL_BAND_RATE, timeout=3)
                 
                 error_count = 0
                 while error_count < config.SERIAL_ERROR_MAX_RETRY:
@@ -92,11 +95,15 @@ class SerialReader:
                         raise
                     except:
                         error_count += 1
-                        logging.info("(Main) Try {} on Port {} failed... retrying...".format(error_count, p))  
+                        logging.info("(Main) Try {} on Port {} failed... retrying...".format(error_count, p))
+                        # add some time buffer to prevent too frequent retry when error occurs
+                        time.sleep(3)
             
             # Wait for a long time and check again if there's new machine available
-            logging.error("(Main) Can not read any sensor data from Serial port, is arduino working correctly?")
-            time.sleep(300)
+            RETRY_INTERVAL = 300
+            logging.error(
+                "(Main) Can not read data from Serial port, is arduino working correctly? Retrying in {} seconds...".format(RETRY_INTERVAL))
+            time.sleep(RETRY_INTERVAL)
             
     
     # Process sensor data, assign correct topics to it and finally use MQTT to publish to the cloud
