@@ -1,5 +1,4 @@
 from project_serial_reader import SerialReader
-from project_mqtt_publisher import MQTTDataPublisher
 import project_camera
 
 import threading
@@ -10,7 +9,7 @@ logging.basicConfig(format="%(asctime)s %(levelname)s: %(message)s", level=loggi
 """ Main Entry of the project 
 """
 # Thread dealing with serial data from Arduino
-serial_reader = SerialReader(MQTTDataPublisher())
+serial_reader = SerialReader()
 t_serial = threading.Thread(target=serial_reader.start_processing, daemon=True)
 t_serial.start()
 

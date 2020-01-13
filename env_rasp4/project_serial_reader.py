@@ -8,7 +8,7 @@ import rx
 
 import logging
 
-from project_mqtt_publisher import MQTTDataPublisher
+from project_mqtt_helper import MQTTDataHelper
 import global_config as config
 
 
@@ -19,12 +19,12 @@ import global_config as config
 
 
 class SerialReader:
-    def __init__(self, mqtt_publisher):
-        self.mqtt_publisher = mqtt_publisher
+    def __init__(self):
+        self.mqtt_publisher = MQTTDataHelper()
 
     def start_processing(self):
         rx.create(self.read_from_serial).subscribe(
-            on_next=lambda data: self.publish_data_to_cloud(
+            on_next=lambda data: self.publish_data_with_mqtt(
                 data, self.mqtt_publisher),
             on_error=lambda e: logging.info("(Main) There was an error processing data, message: {}".format(str(e))))
 
@@ -107,7 +107,7 @@ class SerialReader:
             
     
     # Process sensor data, assign correct topics to it and finally use MQTT to publish to the cloud
-    def publish_data_to_cloud(self, data, mqtt):
+    def publish_data_with_mqtt(self, data, mqtt):
         topic = config.TOPIC_PREFIX_SENSOR + \
             data["sensor"] + "/" + data["unit"] + "/"
         mqtt.publish_data_to_cloud(topic, data['data'])
@@ -119,6 +119,5 @@ if __name__ == "__main__":
     logging.basicConfig(format="%(asctime)s %(levelname)s: %(message)s",
                         level=logging.DEBUG)
 
-    mqtt_publisher = MQTTDataPublisher()
-    SerialReader(mqtt_publisher).start_processing()
+    SerialReader().start_processing()
     
