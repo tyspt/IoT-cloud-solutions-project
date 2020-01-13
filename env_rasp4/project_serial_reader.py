@@ -20,7 +20,8 @@ import global_config as config
 
 class SerialReader:
     def __init__(self):
-        self.mqtt_publisher = MQTTDataHelper()
+        self.mqtt_publisher = MQTTDataHelper(
+            subscriber_topic = config.TOPIC_PREFIX_CONTROL)
 
     def start_processing(self):
         rx.create(self.read_from_serial).subscribe(
