@@ -14,6 +14,7 @@ static const int DISTANCE_SENSOR_DIGITAL_PIN_TRIG = 12;
 
 static const int WATER_LEVEVL_SENSOR_ANALOG_PIN = A0;
 static const int LIGHT_SENSOR_ANALOG_PIN = A2;
+static const int PH_SENSOR_ANALOG_PIN = A3;
 
 
 //create json objects for storing data
@@ -23,6 +24,7 @@ DynamicJsonDocument humid_json(capacity);
 DynamicJsonDocument water_level_json(capacity);
 DynamicJsonDocument brightness_json(capacity);
 DynamicJsonDocument distance_json(capacity);
+DynamicJsonDocument ph_json(capacity);
 
 
 DHT_nonblocking dht_sensor( DHT_SENSOR_DIGITAL_PIN, DHT_SENSOR_TYPE );
@@ -60,6 +62,11 @@ void setup( )
   distance_json["sensor"] = "ultrasonic_distance";
   distance_json["data"] = -1.0f;
   distance_json["unit"] = "centimeter";
+
+  ph_json["timestamp"] = 1ul;
+  ph_json["sensor"] = "ph";
+  ph_json["data"] = -1.0f;
+  ph_json["unit"] = "ph";
   
   Serial.begin(9600);
 }
@@ -123,8 +130,6 @@ static bool measure_brightness(int *brightness){
   if( millis( ) - measurement_timestamp > (READING_INTERVAL_SECONDS * 1000ul) || millis( ) < measurement_timestamp )
   {   
       //convert brightness to percent
-
-      
       *brightness = map(analogRead(LIGHT_SENSOR_ANALOG_PIN), 0, 1023, 0, 100);
       measurement_timestamp = millis( );
       return( true );
@@ -145,7 +150,7 @@ static bool measure_distance(int *distance){
   /* Measure once every inverval */
   if( millis( ) - measurement_timestamp > (READING_INTERVAL_SECONDS * 1000ul) || millis( ) < measurement_timestamp )
   {   
-      //convert brightness to percent
+      // simply use library
       *distance = sr04_ultrasonic.Distance();
       measurement_timestamp = millis( );
       return( true );
@@ -155,6 +160,32 @@ static bool measure_distance(int *distance){
 }
 
 
+/* Water PH measurement
+ *  
+ * Poll for a measurement, keeping the state machine alive.  Returns
+ * true if a measurement is available.
+ */
+static bool measure_water_ph(float *ph){
+  static unsigned long measurement_timestamp = millis( );
+  
+  /* Measure once every inverval */
+  if( millis( ) - measurement_timestamp > (READING_INTERVAL_SECONDS * 1000ul) || millis( ) < measurement_timestamp )
+  {   
+      //convert analog value to ph --> still needs colabration
+      int measure = analogRead(PH_SENSOR_ANALOG_PIN);
+      double voltage = 5 / 1024.0 * measure; //classic digital to voltage conversion
+            
+      // PH_step = (voltage@PH7 - voltage@PH4) / (PH7 - PH4)
+      // PH_probe = PH7 - ((voltage@PH7 - voltage@probe) / PH_step)
+      *ph = 7 + ((2.5 - voltage) / 0.18);
+
+      measurement_timestamp = millis( );
+      return( true );
+  }
+  
+  return ( false );
+}
+
 /*
  * Main program loop.
  */
@@ -163,6 +194,7 @@ void loop( )
   float temperature;
   float humidity;
   float water_level;
+  float ph;
   
   int brightness; 
   int distance;
@@ -215,6 +247,17 @@ void loop( )
     distance_json["data"] = distance;
     
     serializeJson(distance_json, Serial);
+    Serial.println();
+  }
+
+  /* Measure ph.  If the functions returns
+   true, then a measurement is available. */
+  if(measure_water_ph(&ph) == true)
+  {
+    ph_json["timestamp"] = millis();
+    ph_json["data"] = ph;
+    
+    serializeJson(ph_json, Serial);
     Serial.println();
   }
   
