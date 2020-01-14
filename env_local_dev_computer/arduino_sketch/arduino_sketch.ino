@@ -15,7 +15,7 @@ static const int DISTANCE_SENSOR_DIGITAL_PIN_TRIG = 12;
 static const int WATER_LEVEVL_SENSOR_ANALOG_PIN = A0;
 static const int LIGHT_SENSOR_ANALOG_PIN = A2;
 static const int PH_SENSOR_ANALOG_PIN = A3;
-
+static const int TURBIDITY_SENSOR_ANALOG_PIN = A4;
 
 //create json objects for storing data
 const size_t capacity = JSON_OBJECT_SIZE(4);
@@ -25,7 +25,7 @@ DynamicJsonDocument water_level_json(capacity);
 DynamicJsonDocument brightness_json(capacity);
 DynamicJsonDocument distance_json(capacity);
 DynamicJsonDocument ph_json(capacity);
-
+DynamicJsonDocument turbidity_json(capacity);
 
 DHT_nonblocking dht_sensor( DHT_SENSOR_DIGITAL_PIN, DHT_SENSOR_TYPE );
 SR04 sr04_ultrasonic = SR04(DISTANCE_SENSOR_DIGITAL_PIN_ECHO,DISTANCE_SENSOR_DIGITAL_PIN_TRIG); //object library for ultrasonic sensor
@@ -67,6 +67,11 @@ void setup( )
   ph_json["sensor"] = "ph";
   ph_json["data"] = -1.0f;
   ph_json["unit"] = "ph";
+
+  turbidity_json["timestamp"] = 1ul;
+  turbidity_json["sensor"] = "turbidity";
+  turbidity_json["data"] = -1.0f;
+  turbidity_json["unit"] = "percent";
   
   Serial.begin(9600);
 }
@@ -186,6 +191,31 @@ static bool measure_water_ph(float *ph){
   return ( false );
 }
 
+
+/* Water turbidity measurement
+ *  
+ * Poll for a measurement, keeping the state machine alive.  Returns
+ * true if a measurement is available.
+ */
+static bool measure_water_turbidity(float *turbidity){
+  static unsigned long measurement_timestamp = millis( );
+  
+  /* Measure once every inverval */
+  if( millis( ) - measurement_timestamp > (READING_INTERVAL_SECONDS * 1000ul) || millis( ) < measurement_timestamp )
+  {   
+      //convert analog value to turbidity
+      int measure = analogRead(TURBIDITY_SENSOR_ANALOG_PIN);
+      double voltage = 5 / 1024.0 * measure; //classic digital to voltage conversion
+      *turbidity = (1.0 - voltage / 5.0) * 100.0;;
+      
+      measurement_timestamp = millis( );
+      return( true );
+  }
+  
+  return ( false );
+}
+
+
 /*
  * Main program loop.
  */
@@ -195,6 +225,7 @@ void loop( )
   float humidity;
   float water_level;
   float ph;
+  float turbidity;
   
   int brightness; 
   int distance;
@@ -260,5 +291,15 @@ void loop( )
     serializeJson(ph_json, Serial);
     Serial.println();
   }
-  
+
+  /* Measure turbidity.  If the functions returns
+   true, then a measurement is available. */
+  if(measure_water_turbidity(&turbidity) == true)
+  {
+    turbidity_json["timestamp"] = millis();
+    turbidity_json["data"] = turbidity;
+    
+    serializeJson(turbidity_json, Serial);
+    Serial.println();
+  }
 }
