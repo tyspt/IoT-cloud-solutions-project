@@ -75,7 +75,7 @@ class MQTTDataHelper:
         if len(device_name) > 0 and len(command) > 0 and "RESPONSE" not in command.upper():
             # give current status of deivce
             if command.upper() == "STATUS":
-                status = control.get_hue_http_device_status(device_name)
+                status = control.get_status(device_name)
                 self.client.publish(
                     msg.topic, "Response: {}:{}".format(device_name, status))
             # toggle device
